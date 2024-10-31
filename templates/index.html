@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>File Upload and Preview</title>
+</head>
+<body>
+<div id="app">
+    <input type="file" @change="upload">
+    <div ref="file"></div>
+</div>
+<script src="{{ url_for('static', filename='jszip.min.js') }}"></script>
+<script src="{{ url_for('static', filename='vue.js') }}"></script>
+<script src="{{ url_for('static', filename='docx-preview.min.js') }}"></script>
+<script>
+    var app = new Vue({
+        el: '#app',
+        data: {
+            file: null
+        },
+        methods: {
+            upload(event) {
+                const file = event.target.files[0];
+                const formData = new FormData();
+                formData.append('file', file);
+
+                fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        this.previewFile(data.filepath);
+                    } else {
+                        console.error('Error:', data.error);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+            },
+            previewFile(filepath) {
+                fetch(filepath)
+                    .then(response => response.arrayBuffer())
+                    .then(data => {
+                        const container = this.$refs.file;
+                        docx.renderAsync(data, container);
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                    });
+            }
+        }
+    });
+</script>
+</body>
+</html>
